@@ -1,4 +1,4 @@
-use super::saveload::{get_chapter, get_chapter_bytes, FileExtension};
+use super::saveload::{get_chapter_bytes, FileExtension};
 use epub::doc::EpubDoc;
 use html2text::from_read;
 use serde_json::json;
@@ -6,7 +6,7 @@ use std::{
     collections::HashMap,
     error,
     fs::{File, OpenOptions},
-    io::{BufReader, Write},
+    io::{BufReader, Cursor, Write},
     path::{Path, PathBuf},
     rc::Rc,
 };
@@ -205,40 +205,9 @@ pub fn extract_chapters(path: &str) -> Result<(), Box<dyn error::Error>> {
 }
 
 pub fn get_chapter_text(path: &str, chapter_number: usize) -> Rc<String> {
-    let folder_name = Path::new(path).file_stem().unwrap().to_str().unwrap();
-    let mut text_rc: Rc<String> = Rc::from(String::new());
-
-    // try to read from txt files (where edited text is saved)
-    if let Ok(text) = get_chapter(folder_name, chapter_number, FileExtension::TXT) {
-        println!("DEBUG: reading from txt file");
-        text_rc = text.into();
-    }
-    // try to read from html files
-    else if let Ok(text) = get_chapter(folder_name, chapter_number, FileExtension::HTML) {
-        println!("DEBUG: reading from html files");
-        text_rc = from_read(text.as_bytes(), 100).into();
-    }
-    // if it fails, read from epub and save html page
-    else if let Ok(mut book) = EpubDoc::new(path) {
-        println!("DEBUG: reading from epub file");
-        book.set_current_page(chapter_number).unwrap();
-        let content = book.get_current_str().unwrap();
-        let text = from_read(content.as_bytes(), 100);
-        // save html page
-        let page_path: PathBuf = [
-            SAVED_BOOKS_PATH,
-            folder_name,
-            &format!("page_{}.html", chapter_number),
-        ]
-        .iter()
-        .collect();
-        println!("DEBUG: path to save chapter: {:?}", page_path);
-        let mut file = File::create(page_path).unwrap();
-        file.write_all(content.as_bytes()).unwrap();
-
-        text_rc = text.into()
-    }
-    text_rc
+    let slice = get_chapter_text_utf8(path, chapter_number);
+    let text = std::str::from_utf8(&slice).unwrap();
+    text.to_string().into()
 }
 
 pub fn get_chapter_text_utf8(path: impl Into<String>, chapter_number: usize) -> Vec<u8> {
@@ -253,7 +222,7 @@ pub fn get_chapter_text_utf8(path: impl Into<String>, chapter_number: usize) -> 
     // try to read from html files
     else if let Ok(text) = get_chapter_bytes(folder_name, chapter_number, FileExtension::HTML) {
         println!("DEBUG: reading from html files");
-        let text = std::io::Cursor::new(text);
+        let text = Cursor::new(text);
         return from_read(text, 100).as_bytes().to_vec();
     }
     // if it fails, read from epub and save html page
@@ -261,7 +230,7 @@ pub fn get_chapter_text_utf8(path: impl Into<String>, chapter_number: usize) -> 
         println!("DEBUG: reading from epub file");
         book.set_current_page(chapter_number).unwrap();
         let content = book.get_current().unwrap();
-        let cursor = std::io::Cursor::new(content);
+        let cursor = Cursor::new(content);
 
         let text = from_read(cursor, 100).as_bytes().to_vec();
         // save html page

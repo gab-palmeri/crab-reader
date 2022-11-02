@@ -1,6 +1,6 @@
 use std::{
     fs::{create_dir_all, File, OpenOptions},
-    io::{BufReader, Read},
+    io::BufReader,
     path::Path,
     sync::mpsc::channel,
 };
