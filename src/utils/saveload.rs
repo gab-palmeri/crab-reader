@@ -148,23 +148,9 @@ pub fn get_chapter(
     folder_name: &str,
     chapter: usize,
     extension: FileExtension,
-) -> Result<String, Box<dyn std::error::Error>> {
-    let ext = match extension {
-        FileExtension::TXT => "txt",
-        FileExtension::HTML => "html",
-        FileExtension::EPUB => "epub",
-    };
-
-    let filename = Path::new(SAVED_BOOKS_PATH)
-        .join(folder_name)
-        .join(format!("page_{}.{}", chapter, ext));
-    println!("filename from where get page: {:?}", filename);
-
-    let file = File::open(filename)?;
-    let mut content = String::new();
-    BufReader::new(file).read_to_string(&mut content)?;
-
-    Ok(content)
+) -> Result<String, String> {
+    let slice = get_chapter_bytes(folder_name, chapter, extension)?;
+    String::from_utf8(slice).map_err(|e| e.to_string())
 }
 
 pub fn get_chapter_bytes(
