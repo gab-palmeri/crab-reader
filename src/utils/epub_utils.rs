@@ -1,4 +1,4 @@
-use super::saveload::{get_chapter, FileExtension};
+use super::saveload::{get_chapter, get_chapter_bytes, FileExtension};
 use epub::doc::EpubDoc;
 use html2text::from_read;
 use serde_json::json;
@@ -225,7 +225,13 @@ pub fn get_chapter_text(path: &str, chapter_number: usize) -> Rc<String> {
         let content = book.get_current_str().unwrap();
         let text = from_read(content.as_bytes(), 100);
         // save html page
-        let page_path: PathBuf = [SAVED_BOOKS_PATH, folder_name, &format!("page_{}.html", chapter_number)].iter().collect();
+        let page_path: PathBuf = [
+            SAVED_BOOKS_PATH,
+            folder_name,
+            &format!("page_{}.html", chapter_number),
+        ]
+        .iter()
+        .collect();
         println!("DEBUG: path to save chapter: {:?}", page_path);
         let mut file = File::create(page_path).unwrap();
         file.write_all(content.as_bytes()).unwrap();
@@ -233,6 +239,47 @@ pub fn get_chapter_text(path: &str, chapter_number: usize) -> Rc<String> {
         text_rc = text.into()
     }
     text_rc
+}
+
+pub fn get_chapter_text_utf8(path: impl Into<String>, chapter_number: usize) -> Vec<u8> {
+    let path = path.into();
+    let folder_name = Path::new(&path).file_stem().unwrap().to_str().unwrap();
+
+    // try to read from txt files (where edited text is saved)
+    if let Ok(text) = get_chapter_bytes(folder_name, chapter_number, FileExtension::TXT) {
+        println!("DEBUG: reading from txt file");
+        return text;
+    }
+    // try to read from html files
+    else if let Ok(text) = get_chapter_bytes(folder_name, chapter_number, FileExtension::HTML) {
+        println!("DEBUG: reading from html files");
+        let text = std::io::Cursor::new(text);
+        return from_read(text, 100).as_bytes().to_vec();
+    }
+    // if it fails, read from epub and save html page
+    else if let Ok(mut book) = EpubDoc::new(&path) {
+        println!("DEBUG: reading from epub file");
+        book.set_current_page(chapter_number).unwrap();
+        let content = book.get_current().unwrap();
+        let cursor = std::io::Cursor::new(content);
+
+        let text = from_read(cursor, 100).as_bytes().to_vec();
+        // save html page
+        let page_path: PathBuf = [
+            SAVED_BOOKS_PATH,
+            folder_name,
+            &format!("page_{}.html", chapter_number),
+        ]
+        .iter()
+        .collect();
+        println!("DEBUG: path to save chapter: {:?}", page_path);
+        let mut file = File::create(page_path).unwrap();
+        file.write_all(&text).unwrap();
+
+        return text;
+    }
+
+    [0u8].into()
 }
 
 pub fn get_metadata_of_book(path: &str) -> HashMap<String, String> {
@@ -253,10 +300,14 @@ pub fn get_metadata_of_book(path: &str) -> HashMap<String, String> {
     metadata
 }
 
-pub fn calculate_number_of_pages(path: &str, number_of_lines: usize, font_size: usize) -> Result<(usize, Vec<(usize, usize)>), Box<dyn error::Error>> {
+pub fn calculate_number_of_pages(
+    path: &str,
+    number_of_lines: usize,
+    font_size: usize,
+) -> Result<(usize, Vec<(usize, usize)>), Box<dyn error::Error>> {
     let mut metadata = get_metadata_of_book(path);
     let number_of_chapters = metadata["chapters"].parse::<usize>().unwrap_or_default();
-    
+
     let n_workers = 4;
     let pool = threadpool::ThreadPool::new(n_workers);
 
@@ -265,12 +316,8 @@ pub fn calculate_number_of_pages(path: &str, number_of_lines: usize, font_size: 
         let tx = tx.clone();
         let path = path.to_string();
         pool.execute(move || {
-            let pages = split_chapter_in_vec(
-                path.as_str(), 
-                Option::None, 
-                i, 
-                number_of_lines, 
-                font_size);
+            let pages =
+                split_chapter_in_vec(path.as_str(), Option::None, i, number_of_lines, font_size);
             println!("DEBUG: chapter {} has {} pages", i, pages.len());
             // send tuple with index of chapter and number of pages
             tx.send((i, pages.len())).unwrap();
@@ -287,21 +334,30 @@ pub fn calculate_number_of_pages(path: &str, number_of_lines: usize, font_size: 
     }
 
     let mut pages_per_chapter_start_end = vec![(0, 0); number_of_chapters];
-    
+
     // cumulative pages per chapter
     for i in 0..pages_per_chapter.len() {
         if i == 0 {
-            pages_per_chapter_start_end[i] = (0, pages_per_chapter[i]-1);
+            pages_per_chapter_start_end[i] = (0, pages_per_chapter[i] - 1);
         } else {
-            let start = pages_per_chapter_start_end[i-1].1 + 1;
+            let start = pages_per_chapter_start_end[i - 1].1 + 1;
             let end = start + pages_per_chapter[i] - 1;
             pages_per_chapter_start_end[i] = (start, end);
         }
     }
 
-
     // save number of pages per chapter in metadata
-    metadata.insert("pages_per_chapter".into(), format!("[{}]", pages_per_chapter_start_end.iter().map(|(a, b)| format!("({}-{})", a, b)).collect::<Vec<String>>().join(", ")));
+    metadata.insert(
+        "pages_per_chapter".into(),
+        format!(
+            "[{}]",
+            pages_per_chapter_start_end
+                .iter()
+                .map(|(a, b)| format!("({}-{})", a, b))
+                .collect::<Vec<String>>()
+                .join(", ")
+        ),
+    );
     // save number of pages in metadata
     metadata.insert("total_pages".into(), number_of_pages.to_string());
 
@@ -313,10 +369,11 @@ pub fn calculate_number_of_pages(path: &str, number_of_lines: usize, font_size: 
         .join("metadata.json");
 
     let metadata_file = OpenOptions::new()
-    .create(true)
-    .truncate(true)
-    .write(true).open(metadata_path)
-    .unwrap();
+        .create(true)
+        .truncate(true)
+        .write(true)
+        .open(metadata_path)
+        .unwrap();
 
     serde_json::to_writer_pretty(metadata_file, &json)?;
 
@@ -326,7 +383,7 @@ pub fn calculate_number_of_pages(path: &str, number_of_lines: usize, font_size: 
 // get total number of pages in the book
 pub fn get_number_of_pages(path: &str) -> usize {
     let metadata = get_metadata_of_book(path);
-    
+
     let result = metadata.get("total_pages");
     if let Some(number_of_pages) = result {
         number_of_pages.parse::<usize>().unwrap_or_default()
@@ -339,17 +396,22 @@ pub fn get_number_of_pages(path: &str) -> usize {
 // and the tuple is the start and end indexes page of the chapter (start, end)
 pub fn get_start_end_pages_per_chapter(path: &str) -> Vec<(usize, usize)> {
     let metadata = get_metadata_of_book(path);
-    
+
     let result = metadata.get("pages_per_chapter");
     if let Some(pages_per_chapter) = result {
         let vec_as_str = pages_per_chapter.to_string();
-        vec_as_str.trim_matches(|c| c == '[' || c == ']').split(',').map(
-            |s| {
-                let start_end = s.trim_matches(|c| c == '(' || c == ')' || c == ' ')
-                .split('-').map(|s| s.parse::<usize>().unwrap_or_default()).collect::<Vec<usize>>();
+        vec_as_str
+            .trim_matches(|c| c == '[' || c == ']')
+            .split(',')
+            .map(|s| {
+                let start_end = s
+                    .trim_matches(|c| c == '(' || c == ')' || c == ' ')
+                    .split('-')
+                    .map(|s| s.parse::<usize>().unwrap_or_default())
+                    .collect::<Vec<usize>>();
                 (start_end[0], start_end[1])
-            }
-        ).collect()
+            })
+            .collect()
     } else {
         calculate_number_of_pages(path, 8, 12).unwrap_or_default().1
     }
@@ -371,20 +433,26 @@ pub fn get_cumulative_current_page_number(path: &str, chapter: usize, page: usiz
 /// You  have to provide the path. Number of lines and font size
 /// You can provide the text of the chapter as a RC String or
 /// you can provide the chapter number
-pub fn split_chapter_in_vec <S: Into<Option<Rc<String>>>, U: Into<Option<usize>>>(path: &str, opt_text: S, chapter_number: U, number_of_lines: usize, font_size: usize) -> Vec<Rc<String>> {
+pub fn split_chapter_in_vec<S: Into<Option<Rc<String>>>, U: Into<Option<usize>>>(
+    path: &str,
+    opt_text: S,
+    chapter_number: U,
+    number_of_lines: usize,
+    font_size: usize,
+) -> Vec<Rc<String>> {
     // todo(): consider also the font size
-    
+
     let text = match opt_text.into() {
         Some(book_chapter_text) => book_chapter_text,
         None => get_chapter_text(path, chapter_number.into().unwrap_or(0)),
     };
     let lines = text.split("\n\n").collect::<Vec<&str>>();
     lines
-    .into_iter()
-    .enumerate()
-    .map(|(idx, line)| match idx % number_of_lines {
-        0 => Rc::new(line.to_string()),
-        _ => Rc::new(format!("{}{}", "\n\n", line)),
-    })
-    .collect()
+        .into_iter()
+        .enumerate()
+        .map(|(idx, line)| match idx % number_of_lines {
+            0 => Rc::new(line.to_string()),
+            _ => Rc::new(format!("{}{}", "\n\n", line)),
+        })
+        .collect()
 }
