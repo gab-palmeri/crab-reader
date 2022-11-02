@@ -211,7 +211,8 @@ impl Book {
         let (chapter_number, current_page) = saveload::get_page_of_chapter(path_str).unwrap();
 
         let number_of_pages = epub_utils::get_number_of_pages(path_str);
-        let cumulative_current_page = epub_utils::get_cumulative_current_page_number(path_str, chapter_number, current_page);
+        let cumulative_current_page =
+            epub_utils::get_cumulative_current_page_number(path_str, chapter_number, current_page);
         /*
         // these functions have to be called when the you click to read the book
         let chapter_text = epub_utils::get_chapter_text(&path_str, chapter_number);
@@ -227,7 +228,7 @@ impl Book {
             current_page: current_page,
             cumulative_current_page: cumulative_current_page,
             number_of_pages: number_of_pages,
-            idx: 0,               // How to set early?
+            idx: 0, // How to set early?
             selected: false,
             description: desc.into(),
             chapter_text: Rc::new("".into()),
@@ -256,6 +257,10 @@ impl Book {
             *lock = Some(Arc::from(rgb));
         });
     }
+
+    pub fn get_lang(&self) -> Rc<String> {
+        self.lang.clone()
+    }
 }
 
 impl BookReading for Book {
@@ -268,7 +273,11 @@ impl BookReading for Book {
         self.chapter_text = epub_utils::get_chapter_text(self.path.clone().as_str(), chapter);
         self.current_page = if next { 0 } else { self.get_last_page_number() };
         self.chapter_page_text = Rc::clone(&self.split_chapter_in_pages()[self.current_page]);
-        self.cumulative_current_page = epub_utils::get_cumulative_current_page_number(self.path.as_str(), chapter, self.current_page);
+        self.cumulative_current_page = epub_utils::get_cumulative_current_page_number(
+            self.path.as_str(),
+            chapter,
+            self.current_page,
+        );
     }
 
     fn get_last_page_number(&self) -> usize {
@@ -285,7 +294,11 @@ impl BookReading for Book {
 
     fn set_chapter_current_page_number(&mut self, page: usize) {
         self.current_page = page;
-        self.cumulative_current_page = epub_utils::get_cumulative_current_page_number(self.path.as_str(), self.chapter_number, page);
+        self.cumulative_current_page = epub_utils::get_cumulative_current_page_number(
+            self.path.as_str(),
+            self.chapter_number,
+            page,
+        );
         self.chapter_page_text = Rc::clone(&self.split_chapter_in_pages()[page]);
     }
 
@@ -348,15 +361,23 @@ impl BookReading for Book {
 
         let odd = self.current_page % 2;
         let left_page = if odd == 0 {
-            page.get(self.current_page).unwrap_or(&Rc::new("".into())).clone()
+            page.get(self.current_page)
+                .unwrap_or(&Rc::new("".into()))
+                .clone()
         } else {
-            page.get(self.current_page-1).unwrap_or(&Rc::new("".into())).clone()
+            page.get(self.current_page - 1)
+                .unwrap_or(&Rc::new("".into()))
+                .clone()
         };
 
         let right_page = if odd == 0 {
-            page.get(self.current_page+1).unwrap_or(&Rc::new("".into())).clone()
+            page.get(self.current_page + 1)
+                .unwrap_or(&Rc::new("".into()))
+                .clone()
         } else {
-            page.get(self.current_page).unwrap_or(&Rc::new("".into())).clone()
+            page.get(self.current_page)
+                .unwrap_or(&Rc::new("".into()))
+                .clone()
         };
 
         (left_page, right_page)
