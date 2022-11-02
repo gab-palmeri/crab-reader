@@ -69,8 +69,11 @@ impl BookDetails {
 
         let completion_label = Label::dynamic(|data: &Library, _| {
             data.get_selected_book()
-                .map_or("Nessun libro selezionato".into(), |_: &Book| {
-                    format!("Letto al {}%", String::from("//TODO: Add get_compl_perc()"))
+                .map_or("Nessun libro selezionato".into(), |book: &Book| {
+                    let total = book.get_number_of_pages() as f64;
+                    let read = book.get_number_of_read_pages() as f64;
+                    let perc = (read / total) * 100.0;
+                    format!("Percentuale avanzamento: {:.0}%", perc)
                 })
         })
         .with_font(info_font.clone())
