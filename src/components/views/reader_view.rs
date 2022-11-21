@@ -1,6 +1,6 @@
 use druid::{
     widget::{Container, Either, Flex, Label, LineBreaking, Scroll, TextBox},
-    Color, FontDescriptor, LensExt, TextAlignment, UnitPoint, Widget, WidgetExt,
+    Color, FontDescriptor, LensExt, TextAlignment, Widget, WidgetExt,
 };
 
 use crate::{
@@ -10,12 +10,7 @@ use crate::{
     traits::{
         gui::{GUIBook, GUILibrary},
         reader::BookReading,
-        note::NoteManagement
     },
-    components::{
-        chapter_selector::ChapterSelector,
-        buttons::rbtn::RoundedButton,
-    }
 };
 
 pub enum ReaderView {
@@ -172,116 +167,4 @@ pub fn current_chapter_widget() -> Label<CrabReaderState> {
 
         format!("Chapter {}", display_number)
     })
-}
-
-pub fn sidebar_widget() -> impl Widget<CrabReaderState> {
-    let btn = RoundedButton::dynamic(|data: &ReadingState, _env: &_| {
-        if !data.sidebar_open {
-            "Apri selezione capitoli".into()
-        } else {
-            "Chiudi selezione capitoli".into()
-        }
-    })
-    .with_on_click(|ctx, data: &mut ReadingState, _env| {
-        data.sidebar_open = !data.sidebar_open;
-    })
-    .with_text_size(18.0)
-    .align_horizontal(UnitPoint::CENTER)
-    .lens(CrabReaderState::reading_state);
-
-    let sidebar_closed = Flex::column();
-
-    let cs = ChapterSelector::new().lens(CrabReaderState::library);
-    let sidebar_open = Flex::column().with_child(cs);
-
-    let sidebar = Either::new(
-        |data: &CrabReaderState, _env| data.reading_state.sidebar_open,
-        Scroll::new(sidebar_open).vertical(),
-        sidebar_closed,
-    );
-
-    Flex::column()
-        .with_child(btn)
-        .with_default_spacer()
-        .with_flex_child(sidebar, 1.0)
-}
-
-pub fn sidebar_right_widget() -> impl Widget<CrabReaderState> {
-    let myenv = MYENV.lock().unwrap();
-    let font = myenv.font.clone();
-    let font_color = myenv.font_color.clone();
-
-    let notes = Label::dynamic(|data: &CrabReaderState, _env: &_| {
-        data.library
-            .get_selected_book().unwrap()
-            .get_current_note()
-            .unwrap_or("".to_string())
-    })
-    .with_line_break_mode(LineBreaking::WordWrap);
-
-    let tb = TextBox::multiline()
-        .with_placeholder("Scrivi...")
-        .lens(CrabReaderState::reading_state.then(ReadingState::notes));
-
-    let notes_either = Either::new(
-        |data: &CrabReaderState, _env| data.reading_state.is_editing_notes,
-        tb,
-        notes,
-    );
-
-    let edit_note_btn = RoundedButton::dynamic(
-        |data: &CrabReaderState, _env: &_| {
-            if data.library.get_selected_book().unwrap().get_current_note().is_none() {
-                "Aggiungi nota".into()
-            } else {
-                "Modifica nota".into()
-            }
-        },
-    )
-    .with_on_click(|_, data: &mut CrabReaderState, _| {
-        data.reading_state.notes = data
-            .library
-            .get_selected_book()
-            .unwrap()
-            .get_current_note()
-            .unwrap_or_default();
-
-        data.reading_state.is_editing_notes = true;
-    });
-
-    let del_note_btn = RoundedButton::from_text("Rimuovi nota").with_on_click(|ctx, data: &mut CrabReaderState, _| {
-        data.library.get_selected_book_mut().unwrap().delete_note();
-    });
-
-    let undo_note_btn = RoundedButton::from_text("Annulla").with_on_click(|ctx, data: &mut CrabReaderState, _| {
-        data.reading_state.is_editing_notes = false;
-    });
-    
-    let save_note_btn = RoundedButton::from_text("Salva").with_on_click(|ctx, data: &mut CrabReaderState, _| {
-        data.library.get_selected_book_mut().unwrap().edit_note(data.reading_state.notes.clone());
-        data.reading_state.is_editing_notes = false;
-    })
-    .disabled_if(
-        |data: &CrabReaderState, _env| data.reading_state.notes.is_empty()
-    );
-
-
-    let bottom_bts = Either::new(
-        |data: &CrabReaderState, _env| data.reading_state.is_editing_notes,
-        Flex::row()
-        .with_flex_child(save_note_btn, 5.0)
-        .with_flex_spacer(1.0)
-        .with_flex_child(undo_note_btn, 5.0),
-        Flex::row()
-        .with_flex_child(edit_note_btn, 5.0)
-        .with_flex_spacer(1.0)
-        .with_flex_child(del_note_btn, 5.0),
-    );
-
-    Flex::column()
-        .with_flex_child(notes_either, 5.0)
-        .with_flex_spacer(1.0)
-        .with_flex_child(bottom_bts, 1.0)
-        .center()
-
 }

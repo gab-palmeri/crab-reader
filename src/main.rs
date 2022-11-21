@@ -9,7 +9,7 @@ use components::buttons::{
     rbtn::RoundedButton, 
     reader_btns::ReaderBtn
 };
-use components::views::reader_view::{sidebar_widget, ReaderView, current_chapter_widget, sidebar_right_widget};
+use components::views::{reader_view::{ReaderView, current_chapter_widget}, sidebar::Sidebar};
 use druid::widget::{Container, Either, Flex, Label, Scroll, ViewSwitcher, SizedBox};
 use druid::{
     AppLauncher, Data, Env, Key, Lens, PlatformError, Selector, Widget, WidgetExt, WindowDesc,
@@ -331,9 +331,9 @@ fn read_book_ui() -> impl Widget<CrabReaderState> {
 
     let current_chapter = current_chapter_widget().with_text_size(16.0).center();
 
-    let sidebar = sidebar_widget();
+    let sidebar = Sidebar::LEFT.get();
 
-    let sidebar_rx = sidebar_right_widget();
+    let sidebar_rx = Sidebar::RIGHT.get();
 
     let text = Flex::row()
         .with_flex_child(sidebar, 1.0)
