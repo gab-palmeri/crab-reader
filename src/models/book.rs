@@ -1,25 +1,28 @@
-use std::{collections::HashMap, io::Cursor as ImageCursor, rc::Rc, string::String, sync::Arc};
 use druid::{im::Vector, image::io::Reader as ImageReader, text::RichText, Data, Lens};
 use epub::doc::EpubDoc;
+use std::{collections::HashMap, io::Cursor as ImageCursor, rc::Rc, string::String, sync::Arc};
 
 use crate::{
-    MYENV,
-    traits::{gui::GUIBook, reader::{BookReading, BookManagement}, note::NoteManagement},
+    traits::{
+        gui::GUIBook,
+        note::NoteManagement,
+        reader::{BookManagement, BookReading},
+    },
     utils::{
-        envmanager::FontSize, 
+        envmanager::FontSize,
+        epub_utils,
         epub_utils::{
-        calculate_number_of_pages, edit_chapter, get_cumulative_current_page_number,
-        get_number_of_pages, split_chapter_in_vec
+            calculate_number_of_pages, edit_chapter, get_cumulative_current_page_number,
+            get_number_of_pages, split_chapter_in_vec,
         },
         saveload::{
-            load_data, remove_edited_chapter, save_favorite, 
-            load_notes, save_note, delete_note, delete_all_notes
+            delete_all_notes, delete_note, load_data, load_notes, remove_edited_chapter,
+            save_favorite, save_note,
         },
-        epub_utils, text_descriptor
+        text_descriptor,
     },
+    MYENV,
 };
-
-
 
 const NUMBER_OF_LINES: usize = 8;
 
@@ -44,10 +47,32 @@ pub struct Book {
     cover_img: Arc<Vec<u8>>,
     filtered_out: bool,
     #[data(ignore)]
-    notes: HashMap<(usize, usize, String), String>
+    notes: HashMap<(usize, usize, String), String>,
 }
 
 impl Book {
+    pub fn empty_book() -> Book {
+        let e: Rc<String> = String::from("").into();
+        Self {
+            chapter_number: 0,
+            current_page: 0,
+            number_of_pages: 0,
+            number_of_chapters: 0,
+            cumulative_current_page: 0,
+            idx: 0,
+            selected: false,
+            title: Rc::new(String::new()),
+            author: e.clone(),
+            lang: e.clone(),
+            path: e.clone(),
+            is_favorite: false,
+            chapter_text_split: vec![].into(),
+            description: e.clone(),
+            cover_img: vec![].into(),
+            filtered_out: true,
+            notes: HashMap::default(),
+        }
+    }
     /// Method that instantiates a new Book from a epub file
     /// given its path
     pub fn new(path: impl Into<String>) -> Book {
@@ -90,7 +115,7 @@ impl Book {
 
         let cumulative_current_page =
             get_cumulative_current_page_number(path_str, chapter_number, current_page);
-        
+
         let notes = load_notes(path_str).unwrap_or_default();
         println!("Notes: {:?}", notes);
         Book {
@@ -509,7 +534,7 @@ impl NoteManagement for Book {
                 notes.push((key.2.clone(), value.clone()));
             }
         }
-        
+
         match notes.len() {
             0 => None,
             _ => Some(notes),
@@ -518,7 +543,10 @@ impl NoteManagement for Book {
 
     fn get_current_note(&self, start: &String) -> Option<(String, String)> {
         for (key, value) in self.notes.iter() {
-            if key.0 == self.chapter_number && key.1 == self.current_page && key.2.as_str() == start.as_str() {
+            if key.0 == self.chapter_number
+                && key.1 == self.current_page
+                && key.2.as_str() == start.as_str()
+            {
                 return Some((key.2.clone(), value.clone()));
             }
         }
@@ -526,25 +554,39 @@ impl NoteManagement for Book {
     }
 
     fn add_note(&mut self, note: &String) -> String {
-        let start = save_note(self.path.to_string(), self.chapter_number, self.get_page_of_chapter(), note.into()).unwrap();
-        self.notes.insert((self.chapter_number, self.current_page, start.clone()), note.into());
+        let start = save_note(
+            self.path.to_string(),
+            self.chapter_number,
+            self.get_page_of_chapter(),
+            note.into(),
+        )
+        .unwrap();
+        self.notes.insert(
+            (self.chapter_number, self.current_page, start.clone()),
+            note.into(),
+        );
         start
     }
 
     fn edit_note(&mut self, start: &String, note: &String) {
-        let _ = save_note(self.path.to_string(), self.chapter_number, self.get_page_of_chapter(), note.into()).unwrap();
-        self.notes.insert((self.chapter_number, self.current_page, start.into()), note.clone());
+        let _ = save_note(
+            self.path.to_string(),
+            self.chapter_number,
+            self.get_page_of_chapter(),
+            note.into(),
+        )
+        .unwrap();
+        self.notes.insert(
+            (self.chapter_number, self.current_page, start.into()),
+            note.clone(),
+        );
     }
     // delete a note for the current chapter, page and start
     fn delete_note(&mut self, start: &String) {
-        if delete_note(
-            self.path.to_string(),
-            self.chapter_number,
-            start.into(),
-        ).is_ok() {
-            self.notes.remove(&(self.chapter_number, self.current_page, start.into()));
+        if delete_note(self.path.to_string(), self.chapter_number, start.into()).is_ok() {
+            self.notes
+                .remove(&(self.chapter_number, self.current_page, start.into()));
         }
-
     }
     // delete all notes
     fn delete_all_notes(&mut self) {
