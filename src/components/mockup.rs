@@ -1,6 +1,7 @@
 use derivative::Derivative;
-use druid::{im::Vector, Data, Lens};
 use druid::image::io::Reader as ImageReader;
+use druid::{im::Vector, Data, Lens};
+use epub::doc::EpubDoc;
 use std::{
     io::Cursor,
     path::PathBuf,
@@ -11,14 +12,14 @@ use std::{
     },
 };
 use threadpool::ThreadPool;
-use epub::doc::EpubDoc;
 
-use crate::{utils::{
-    dir_manager::{get_epub_dir, get_saved_books_dir},
-    epub_utils,
-    },
-    traits::gui::{GUIBook, GUILibrary},
+use crate::{
     models::book::Book,
+    traits::gui::{GUIBook, GUILibrary},
+    utils::{
+        dir_manager::{get_epub_dir, get_saved_books_dir},
+        epub_utils,
+    },
 };
 
 pub struct LibraryFilterLens;
@@ -354,5 +355,23 @@ impl Default for CoverLoader {
             tx: tx.into(),
             rx: rx.into(),
         }
+    }
+}
+
+pub struct LibrarySelectedBookLens;
+
+impl<L: GUILibrary<B = Book>> Lens<L, Book> for LibrarySelectedBookLens {
+    fn with<V, F: FnOnce(&Book) -> V>(&self, data: &L, f: F) -> V {
+        let Some(book) = data.get_selected_book() else {
+            return f(&Book::empty_book());
+        };
+        f(book)
+    }
+
+    fn with_mut<V, F: FnOnce(&mut Book) -> V>(&self, data: &mut L, f: F) -> V {
+        let Some(book) = data.get_selected_book_mut() else {
+            return f(&mut Book::empty_book());
+        };
+        f(book)
     }
 }
