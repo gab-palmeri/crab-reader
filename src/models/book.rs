@@ -44,7 +44,7 @@ pub struct Book {
     cover_img: Arc<Vec<u8>>,
     filtered_out: bool,
     #[data(ignore)]
-    notes: HashMap<(usize, usize), String>
+    notes: HashMap<(usize, usize, String), String>
 }
 
 impl Book {
@@ -498,27 +498,53 @@ impl GUIBook for Book {
 
 impl NoteManagement for Book {
     // get all notes
-    fn get_notes(&self) -> HashMap<(usize, usize), String> {
+    fn get_all_notes(&self) -> HashMap<(usize, usize, String), String> {
         self.notes.clone()
     }
-    // get note for the current chapter
-    fn get_current_note(&self) -> Option<String> {
-        self.notes.get(&(self.chapter_number, self.current_page)).cloned()
+    // get notes for the current page
+    fn get_notes(&self) -> Option<Vec<(String, String)>> {
+        let mut notes = Vec::new();
+        for (key, value) in self.notes.iter() {
+            if key.0 == self.chapter_number && key.1 == self.current_page {
+                notes.push((key.2.clone(), value.clone()));
+            }
+        }
+        
+        match notes.len() {
+            0 => None,
+            _ => Some(notes),
+        }
     }
-    // add/edit a note for the current chapter and page
-    fn edit_note(&mut self, note: String) {
-        self.notes.insert((self.chapter_number, self.current_page), note.clone());
-        let _ = save_note(self.path.to_string(), self.chapter_number, self.get_page_of_chapter(), note);
+
+    fn get_current_note(&self, start: &String) -> Option<(String, String)> {
+        for (key, value) in self.notes.iter() {
+            if key.0 == self.chapter_number && key.1 == self.current_page && key.2.as_str() == start.as_str() {
+                return Some((key.2.clone(), value.clone()));
+            }
+        }
+        None
     }
-    // delete a note for the current chapter and page
-    fn delete_note(&mut self) {
+
+    fn add_note(&mut self, note: &String) -> String {
+        let start = save_note(self.path.to_string(), self.chapter_number, self.get_page_of_chapter(), note.into()).unwrap();
+        self.notes.insert((self.chapter_number, self.current_page, start.clone()), note.into());
+        start
+    }
+
+    fn edit_note(&mut self, start: &String, note: &String) {
+        let _ = save_note(self.path.to_string(), self.chapter_number, self.get_page_of_chapter(), note.into()).unwrap();
+        self.notes.insert((self.chapter_number, self.current_page, start.into()), note.clone());
+    }
+    // delete a note for the current chapter, page and start
+    fn delete_note(&mut self, start: &String) {
         if delete_note(
             self.path.to_string(),
             self.chapter_number,
-            self.get_page_of_chapter(),
+            start.into(),
         ).is_ok() {
-            self.notes.remove(&(self.chapter_number, self.current_page));
+            self.notes.remove(&(self.chapter_number, self.current_page, start.into()));
         }
+
     }
     // delete all notes
     fn delete_all_notes(&mut self) {

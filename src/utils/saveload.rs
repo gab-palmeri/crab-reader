@@ -311,17 +311,9 @@ pub fn get_chapter_bytes(
 pub fn save_note<T: Into<String> + Clone>(
     book_path: T,
     chapter: usize,
-    start_page: T,
+    page_text: T,
     note: T,
-) -> Result<(), Box<dyn std::error::Error>> {
-
-    println!(
-        "DEBUG saving note: {} {} {} {}",
-        chapter,
-        start_page.clone().into(),
-        book_path.clone().into(),
-        note.clone().into()
-    );
+) -> Result<String, Box<dyn std::error::Error>> {
 
     // check if exists a file
     let notes_path = get_books_notes_path();
@@ -337,10 +329,12 @@ pub fn save_note<T: Into<String> + Clone>(
         create_dir_all(notes_path.parent().unwrap()).unwrap();
     }
 
+    let text = page_text.into();
+    let to_take = if text.len() > 200 { text.len()/3 } else { text.len() };
     // json value for the note to save
     let value = json!(
         {
-            "start":start_page.into(),
+            "start": &text[..to_take],
             "note":note.into()
         }
     );
@@ -376,13 +370,13 @@ pub fn save_note<T: Into<String> + Clone>(
 
     serde_json::to_writer_pretty(file, &json)?;
 
-    Ok(())
+    Ok(text[..to_take].to_string())
 }
 
 /// function to load notes of a book
 pub fn load_notes<T: Into<String> + Clone>(
     book_path: T,
-) -> Result<HashMap<(usize, usize), String>, Box<dyn std::error::Error>> {
+) -> Result<HashMap<(usize, usize, String), String>, Box<dyn std::error::Error>> {
     let mut map = HashMap::new();
 
     if let Ok(file) = File::open(get_books_notes_path()) {
@@ -399,7 +393,7 @@ pub fn load_notes<T: Into<String> + Clone>(
                         let note_text = note["note"].as_str().unwrap().to_string();
 
                         let page = search_page(book_path.clone().into(), chapter_number, start_page);
-                        map.insert((chapter_number, page), note_text);
+                        map.insert((chapter_number, page, start_page.into()), note_text);
                     }
                 }
             }

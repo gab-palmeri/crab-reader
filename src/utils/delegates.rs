@@ -7,7 +7,7 @@ use crate::{
         mockup::SortBy,
     },
     utils::ocrmanager,
-    CrabReaderState, DisplayMode, ENTERING_READING_MODE, traits::{gui::{GUILibrary, GUIBook}, reader::{BookReading, BookManagement}},
+    CrabReaderState, DisplayMode, ENTERING_READING_MODE, traits::{gui::{GUILibrary, GUIBook}, reader::{BookReading, BookManagement}, note::NoteManagement},
 };
 
 pub struct ReadModeDelegate;
@@ -29,7 +29,9 @@ impl AppDelegate<CrabReaderState> for ReadModeDelegate {
                         .get_selected_book()
                         .unwrap()
                         .get_page_of_chapter(),
-                ));
+                ),
+                data.library.get_selected_book().unwrap().get_notes()
+            );
                 Handled::Yes
             }
             notif if notif.is(ENTERING_READING_MODE) => {

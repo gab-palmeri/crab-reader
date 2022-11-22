@@ -1,4 +1,5 @@
 use clap::{arg, command, Parser};
+use druid::im::Vector;
 use crate::models::book::Book;
 use components::book::book_details::BookDetails;
 use crate::utils::colors;
@@ -49,15 +50,17 @@ pub struct ReadingState {
     text_1: String,
     notes: String,
     is_editing_notes: bool,
+    notes_vec: Vector<(String, String)>
 }
 
 impl ReadingState {
-    fn enable<S: Into<Option<Rc<String>>>>(&mut self, _: S) {
+    fn enable<S: Into<Option<Rc<String>>>>(&mut self, _: S, notes: Option<Vec<(String, String)>>) {
         self.single_view = true;
         self.is_editing = false;
         self.is_editing_notes = false;
         self.pages_btn_style = 0;
         self.sidebar_open = false;
+        self.notes_vec = notes.unwrap_or_default().into();
     }
     fn disable(&mut self) {
         self.single_view = false;
@@ -68,6 +71,7 @@ impl ReadingState {
         self.text_0 = String::default();
         self.text_1 = String::default();
         self.notes = String::default();
+        self.notes_vec = Vector::new();
     }
 }
 
@@ -82,6 +86,7 @@ impl Default for ReadingState {
             text_0: String::default(),
             text_1: String::default(),
             notes: String::default(),
+            notes_vec: Vector::new()
         }
     }
 }

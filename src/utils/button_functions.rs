@@ -6,7 +6,7 @@ use crate::{
     CrabReaderState, 
     traits::{
         gui::{GUIBook, GUILibrary}, 
-        reader::{BookReading, BookManagement}
+        reader::{BookReading, BookManagement}, note::NoteManagement
     },
 };
 use druid::EventCtx;
@@ -87,11 +87,13 @@ fn change_page(
 pub fn go_next(data: &mut CrabReaderState) {
     let book = data.library.get_selected_book_mut().unwrap();
     change_page(book, data.reading_state.is_editing, data.reading_state.single_view, true);
+    data.reading_state.notes_vec = book.get_notes().unwrap_or_default().into();
 }
 // function for going to previous page
 pub fn go_prev(data: &mut CrabReaderState) {
     let book = data.library.get_selected_book_mut().unwrap();
     change_page(book, data.reading_state.is_editing, data.reading_state.single_view, false);
+    data.reading_state.notes_vec = book.get_notes().unwrap_or_default().into();
 }
 
 pub fn save_btn_fn(
