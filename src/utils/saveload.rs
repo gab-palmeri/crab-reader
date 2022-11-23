@@ -461,6 +461,7 @@ pub fn delete_note<T: Into<String> + Clone>(
     Ok(())
 }
 
+/// delete notes of book_path given chapter, and vec of start_page (string)
 pub fn delete_notes<T: Into<String> + Clone>(
     book_path: T,
     chapter: usize,

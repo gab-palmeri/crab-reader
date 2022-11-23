@@ -1,4 +1,4 @@
-use druid::{Widget, UnitPoint, widget::{Flex, Either, Scroll, Label, LineBreaking, TextBox, List, ListIter}, LensExt, WidgetExt, im::Vector, Env, EventCtx};
+use druid::{Widget, UnitPoint, widget::{Flex, Either, Scroll, Label, LineBreaking, TextBox, List, ListIter, MainAxisAlignment}, LensExt, WidgetExt, im::Vector, Env, EventCtx};
 
 use crate::{CrabReaderState, components::{buttons::rbtn::RoundedButton, chapter_selector::ChapterSelector, note_widget::{get_notes_list}}, ReadingState, traits::{gui::GUILibrary, note::NoteManagement, reader::{BookReading, BookManagement}}};
 
@@ -63,7 +63,7 @@ fn right_sidebar_widget() -> Flex<CrabReaderState> {
             let book = data.library.get_selected_book().unwrap().clone();
             let note = data.reading_state.notes.clone();
             data.library.get_selected_book_mut().unwrap().get_notes_mut().add_note(&book, note);
-        });
+        }).padding(5.0);
 
     let del_notes = RoundedButton::from_text("Elimina note")
         .disabled_if(|data: &CrabReaderState, _env: &_| data.library.get_selected_book().unwrap().get_notes().len() == 0)
@@ -74,14 +74,17 @@ fn right_sidebar_widget() -> Flex<CrabReaderState> {
             let page = book.get_current_page_number();
 
             data.library.get_selected_book_mut().unwrap().get_notes_mut().delete_notes(book_path, chapter, page);
-        });
+        }).padding(5.0);
     
     Flex::column()
-        .with_child(notes)
-        .with_flex_spacer(1.0)
+        .with_flex_child(notes,8.0)
+        .with_flex_spacer(2.0)
         .with_child(tb)
+        .with_flex_spacer(1.0)
         .with_child(add_note)
         .with_child(del_notes)
+        .must_fill_main_axis(true)
+        .main_axis_alignment(MainAxisAlignment::End)
     /* 
     let notes = Label::dynamic(|data: &CrabReaderState, _env: &_| {
         data.library

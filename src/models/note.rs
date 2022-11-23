@@ -160,10 +160,10 @@ impl NoteManagement for BookNotes {
         let Some(vec) = self.all_notes.get(&(chapter, page)) else {
             return;
         };
-
+        // get the start of the notes to remove
         let to_remove = vec.iter().map(|n| n.get_start().clone()).collect::<Vec<String>>();
 
-
+        // remove the notes from file
         let Ok(_) = delete_notes(book_path, chapter, to_remove) else {
             return;
         };
