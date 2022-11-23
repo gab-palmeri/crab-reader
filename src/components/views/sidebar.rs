@@ -56,7 +56,7 @@ fn right_sidebar_widget() -> Flex<CrabReaderState> {
         .with_placeholder("Scrivi...")
         .lens(CrabReaderState::reading_state.then(ReadingState::notes))
         .expand_width();
-    /*
+    
     let add_note = RoundedButton::from_text("Aggiungi nota")
         .disabled_if(|data: &CrabReaderState, _env: &_| data.library.get_selected_book().unwrap().get_notes().len() > 0)
         .with_on_click(|_, data: &mut CrabReaderState, _| {
@@ -64,12 +64,12 @@ fn right_sidebar_widget() -> Flex<CrabReaderState> {
             let note = data.reading_state.notes.clone();
             data.library.get_selected_book_mut().unwrap().get_notes_mut().add_note(&book, note);
         });
-    */
+    
     Flex::column()
         .with_child(notes)
         .with_flex_spacer(1.0)
         .with_child(tb)
-        //.with_child(add_note)
+        .with_child(add_note)
     /* 
     let notes = Label::dynamic(|data: &CrabReaderState, _env: &_| {
         data.library

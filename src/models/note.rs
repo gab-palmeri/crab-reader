@@ -75,6 +75,10 @@ impl BookNotes {
             chapter_page_notes: all_notes.get(&(chapter, page)).unwrap_or(&Vector::new()).clone()
         }
     }
+
+    pub fn len(&self) -> usize {
+        self.chapter_page_notes.len()
+    }
 }
 
 impl Default for BookNotes {
