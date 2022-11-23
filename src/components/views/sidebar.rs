@@ -1,6 +1,6 @@
 use druid::{Widget, UnitPoint, widget::{Flex, Either, Scroll, Label, LineBreaking, TextBox, List, ListIter}, LensExt, WidgetExt, im::Vector, Env, EventCtx};
 
-use crate::{CrabReaderState, components::{buttons::rbtn::RoundedButton, chapter_selector::ChapterSelector, note_widget::get_note_widget}, ReadingState, traits::{gui::GUILibrary, note::NoteManagement, reader::BookReading}};
+use crate::{CrabReaderState, components::{buttons::rbtn::RoundedButton, chapter_selector::ChapterSelector, note_widget::{get_notes_list}}, ReadingState, traits::{gui::GUILibrary, note::NoteManagement, reader::{BookReading, BookManagement}}};
 
 pub enum Sidebar {
     LEFT,
@@ -50,71 +50,26 @@ fn left_sidebar_widget() -> Flex<CrabReaderState> {
 
 fn right_sidebar_widget() -> Flex<CrabReaderState> {
     // list of notes
-    let notes = List::new(|| {
-
-        let header = Label::new(|(_, (start, _)): &(Vector<(String, String)>, (String, String)), _env: &_| {
-            format!("{}...", &start[..10])
-        })
-        .with_text_size(8.0)
-        .with_line_break_mode(LineBreaking::WordWrap)
-        .with_text_alignment(druid::TextAlignment::Start);
-
-        let text = Label::new(|(_, (_, content)): &(Vector<(String, String)>, (String, String)), _env: &_| {
-            format!("{}", content)
-        })
-        .with_line_break_mode(LineBreaking::WordWrap)
-        .with_text_alignment(druid::TextAlignment::Start);
-
-        let del_btn = RoundedButton::from_text("X")
-        .with_on_click(|_, (data, (start, _)): &mut (Vector<(String, String)>, (String, String)), _env: &_| {
-            data.retain(|(s, _)| s != start);
-            // chiamare funzione per cancellare la nota
-        });
-
-        let mod_btn = RoundedButton::from_text("Modifica")
-        .with_on_click(|_, (data, (start, content)): &mut (Vector<(String, String)>, (String, String)), _env: &_| {
-            let Some(index) = data.index_of(&(start.to_string(), content.to_string())) else { return; };
-            data[index] = (start.to_string(), "MODIFICATO".into());
-            // chiamare funzione per modificare la nota
-        });
-
-        let row = Flex::row()
-            .with_flex_child(mod_btn,4.0)
-            .with_flex_spacer(1.0)
-            .with_flex_child(del_btn, 4.0);
-        
-        Flex::column()
-            .with_child(header)
-            .with_default_spacer()
-            .with_child(text)
-            .with_default_spacer()
-            .with_child(row)
-
-    })
-    .lens(CrabReaderState::reading_state.then(ReadingState::notes_vec).map(
-        |data: &Vector<(String, String)> | (data.clone(), data.clone()),
-        |data: &mut Vector<(String, String)>, x| {
-            *data = x.0
-        }
-    ));
+    let notes = Scroll::new(get_notes_list()).vertical();
 
     let tb = TextBox::multiline()
         .with_placeholder("Scrivi...")
         .lens(CrabReaderState::reading_state.then(ReadingState::notes))
         .expand_width();
-
+    /*
     let add_note = RoundedButton::from_text("Aggiungi nota")
-        .disabled_if(|data: &CrabReaderState, _env: &_| data.reading_state.notes_vec.len() > 0)
+        .disabled_if(|data: &CrabReaderState, _env: &_| data.library.get_selected_book().unwrap().get_notes().len() > 0)
         .with_on_click(|_, data: &mut CrabReaderState, _| {
-            let start = data.library.get_selected_book_mut().unwrap().add_note(&data.reading_state.notes);
-            data.reading_state.notes_vec.push_back((start, data.reading_state.notes.clone()));
+            let book = data.library.get_selected_book().unwrap().clone();
+            let note = data.reading_state.notes.clone();
+            data.library.get_selected_book_mut().unwrap().get_notes_mut().add_note(&book, note);
         });
-
+    */
     Flex::column()
         .with_child(notes)
         .with_flex_spacer(1.0)
         .with_child(tb)
-        .with_child(add_note)
+        //.with_child(add_note)
     /* 
     let notes = Label::dynamic(|data: &CrabReaderState, _env: &_| {
         data.library

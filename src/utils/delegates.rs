@@ -30,7 +30,6 @@ impl AppDelegate<CrabReaderState> for ReadModeDelegate {
                         .unwrap()
                         .get_page_of_chapter(),
                 ),
-                data.library.get_selected_book().unwrap().get_notes()
             );
                 Handled::Yes
             }

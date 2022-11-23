@@ -1,17 +1,19 @@
-use std::collections::HashMap;
+use druid::im::Vector;
+
+use crate::models::{note::Note, book::Book};
+
 
 pub trait NoteManagement {
-    /// get all notes
-    fn get_all_notes(&self) -> HashMap<(usize, usize, String), String>;
-    /// get note for the current (chapter, page)
-    fn get_notes(&self) -> Option<Vec<(String, String)>>;
-    fn get_current_note(&self, start: &String) -> Option<(String, String)>;
-    /// add note for the current (chapter, page)
-    fn add_note(&mut self, note: &String) -> String;
+    fn get(&self) -> &Vector<Note>;
+    /// get a borrow for the current (chapter, page, start) notes
+    fn get_note(&self, start: &String) -> Option<&Note>;
+    /// get a mutable borrow for the current (chapter, page, start) notes
+    fn get_note_mut(&mut self, start: &String) -> Option<&mut Note>;
+    
+    /// add note for the current (chapter, page), return the Note.start
+    fn add_note(&mut self, book: &Book, note: String) -> Option<String>;
     /// edit a note for the current chapter, page and start
-    fn edit_note(&mut self, start: &String, note: &String); 
+    fn edit_note(&mut self, book: &Book, start: &String, note: String); 
     /// delete a note for the current chapter, page and start
-    fn delete_note(&mut self, start: &String);
-    /// delete all notes
-    fn delete_all_notes(&mut self);
+    fn delete_note(&mut self, book: &Book, start: &String);
 }

@@ -1,5 +1,7 @@
 use druid::{text::RichText, im::Vector};
 
+use crate::models::note::BookNotes;
+
 /// trait that describes the book reading functions
 pub trait BookReading {
     /// Method that returns the current chapter number
@@ -56,4 +58,8 @@ pub trait BookManagement {
     fn load_chapter(&mut self);
 
     fn set_favorite(&mut self, favorite: bool);
+
+    fn get_notes(&self) -> &BookNotes;
+
+    fn get_notes_mut(&mut self) -> &mut BookNotes;
 }
