@@ -461,6 +461,53 @@ pub fn delete_note<T: Into<String> + Clone>(
     Ok(())
 }
 
+pub fn delete_notes<T: Into<String> + Clone>(
+    book_path: T,
+    chapter: usize,
+    start_pages: Vec<String>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let Ok(file) = File::open(get_books_notes_path()) else {
+        return Ok(());
+    };
+
+    let reader = BufReader::new(file);
+    let mut json: Value = serde_json::from_reader(reader)?;
+    
+    // check if there is a book with that name and an array
+    let Some(book_array) = json[book_path.clone().into()].as_array_mut() else {
+        return Ok(());
+    };
+
+    for item in book_array {
+        let chapter_number = item["chapter"].as_u64().unwrap() as usize;
+        
+        if chapter_number != chapter {
+            continue;
+        }
+
+        let Some(notes_array) = item["notes"].as_array_mut() else {
+            return Ok(());
+        };
+
+        notes_array.retain(|note| {
+            !start_pages.iter().any(|start| {
+                note["start"].as_str().unwrap() == start
+            })
+        }); 
+    }
+
+    // open file to write
+    let file = OpenOptions::new()
+    .write(true)
+    .create(true)
+    .truncate(true)
+    .open(get_books_notes_path())?;
+
+    serde_json::to_writer_pretty(file, &json)?;
+
+    Ok(())
+}
+
 /// function to delete all notes of a book
 pub fn delete_all_notes<T: Into<String> + Clone>(
     book_path: T,

@@ -69,10 +69,11 @@ fn right_sidebar_widget() -> Flex<CrabReaderState> {
         .disabled_if(|data: &CrabReaderState, _env: &_| data.library.get_selected_book().unwrap().get_notes().len() == 0)
         .with_on_click(|_, data: &mut CrabReaderState, _| {
             let book = data.library.get_selected_book().unwrap();
+            let book_path = book.get_path().clone();
             let chapter = book.get_chapter_number();
             let page = book.get_current_page_number();
 
-            data.library.get_selected_book_mut().unwrap().get_notes_mut().delete_notes(chapter, page)
+            data.library.get_selected_book_mut().unwrap().get_notes_mut().delete_notes(book_path, chapter, page);
         });
     
     Flex::column()

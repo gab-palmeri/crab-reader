@@ -3,7 +3,7 @@ use std::{rc::Rc, collections::HashMap};
 
 use druid::{Data, widget::ListIter, im::{Vector}};
 
-use crate::{traits::{note::NoteManagement, reader::{BookReading, BookManagement}}, utils::saveload::{save_note, load_notes, delete_note, delete_all_notes}};
+use crate::{traits::{note::NoteManagement, reader::{BookReading, BookManagement}}, utils::saveload::{save_note, load_notes, delete_note, delete_all_notes, delete_notes}};
 
 use super::book::{Book, book_derived_lenses::chapter_number};
 
@@ -154,9 +154,20 @@ impl NoteManagement for BookNotes {
 
     }
 
-    fn delete_notes(&mut self, chapter: usize, page: usize) {
+    fn delete_notes(&mut self, book_path: String, chapter: usize, page: usize) {
 
-        todo!("remove from file");
+        // get the notes to remove
+        let Some(vec) = self.all_notes.get(&(chapter, page)) else {
+            return;
+        };
+
+        let to_remove = vec.iter().map(|n| n.get_start().clone()).collect::<Vec<String>>();
+
+
+        let Ok(_) = delete_notes(book_path, chapter, to_remove) else {
+            return;
+        };
+
 
         self.chapter_page_notes = Vector::new();
         self.all_notes.remove(&(chapter, page));
