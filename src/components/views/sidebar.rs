@@ -64,12 +64,23 @@ fn right_sidebar_widget() -> Flex<CrabReaderState> {
             let note = data.reading_state.notes.clone();
             data.library.get_selected_book_mut().unwrap().get_notes_mut().add_note(&book, note);
         });
+
+    let del_notes = RoundedButton::from_text("Elimina note")
+        .disabled_if(|data: &CrabReaderState, _env: &_| data.library.get_selected_book().unwrap().get_notes().len() == 0)
+        .with_on_click(|_, data: &mut CrabReaderState, _| {
+            let book = data.library.get_selected_book().unwrap();
+            let chapter = book.get_chapter_number();
+            let page = book.get_current_page_number();
+
+            data.library.get_selected_book_mut().unwrap().get_notes_mut().delete_notes(chapter, page)
+        });
     
     Flex::column()
         .with_child(notes)
         .with_flex_spacer(1.0)
         .with_child(tb)
         .with_child(add_note)
+        .with_child(del_notes)
     /* 
     let notes = Label::dynamic(|data: &CrabReaderState, _env: &_| {
         data.library

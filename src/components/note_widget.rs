@@ -27,18 +27,11 @@ pub fn get_notes_list() -> impl Widget<CrabReaderState> {
             .with_line_break_mode(LineBreaking::WordWrap)
             .with_text_alignment(druid::TextAlignment::Start);
 
-        let del_btn = RoundedButton::from_text("X")
-            .with_on_click(|_ctx: &mut EventCtx, note: &mut Note, _env: &_| {
-                println!("Deleting note: {}", note.get_start());
-                // chiamare funzione per cancellare la nota
-        });
-
         Flex::column()
             .with_child(header)
             .with_default_spacer()
             .with_child(content)
             .with_default_spacer()
-            .with_child(del_btn)
     })
     .lens(CrabReaderState::library.then(LibrarySelectedBookLens).then(SelectedBookNotesLens));
 

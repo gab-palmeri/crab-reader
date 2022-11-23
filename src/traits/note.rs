@@ -16,4 +16,6 @@ pub trait NoteManagement {
     fn edit_note(&mut self, book: &Book, start: &String, note: String); 
     /// delete a note for the current chapter, page and start
     fn delete_note(&mut self, book: &Book, start: &String);
+
+    fn delete_notes(&mut self, chapter: usize, page: usize);
 }

@@ -113,12 +113,10 @@ impl NoteManagement for BookNotes {
         };
 
         let this_note = Note::new(start.clone(), note);
+        
+        self.chapter_page_notes.push_back(this_note.clone());
 
-        self.all_notes.entry((chapter, page)).and_modify(
-            |notes| notes.push_back(this_note.clone())
-        ).or_insert(Vector::from(vec![this_note.clone()]));
-
-        self.chapter_page_notes.push_back(this_note);
+        self.all_notes.entry((chapter, page)).or_insert(Vector::new()).push_back(this_note);
 
         Some(start)
     }
@@ -134,16 +132,10 @@ impl NoteManagement for BookNotes {
             return;
         };
 
-        let this_note = Note::new(start.clone(), note.clone());
-
-        self.all_notes.entry((chapter, page)).and_modify(
-            |notes| {
-                let Some(index) = notes.iter().position(|note| note.get_start() == start) else { return; };
-                notes[index] = this_note.clone();
-            }
-        );
-
         self.chapter_page_notes.iter_mut().find(|n| n.get_start() == start).map(|n| n.set_text(note));
+
+        self.all_notes.insert((chapter, page), self.chapter_page_notes.clone());
+
     }
 
     fn delete_note(&mut self, book: &Book, start: &String) {
@@ -156,13 +148,18 @@ impl NoteManagement for BookNotes {
             return;
         };
 
-        self.all_notes.entry((chapter, page)).and_modify(
-            |notes| {
-                notes.retain(|note| note.get_start() != start);
-            }
-        );
-
         self.chapter_page_notes.retain(|n| n.get_start() != start);
+
+        self.all_notes.insert((chapter, page), self.chapter_page_notes.clone());
+
+    }
+
+    fn delete_notes(&mut self, chapter: usize, page: usize) {
+
+        todo!("remove from file");
+
+        self.chapter_page_notes = Vector::new();
+        self.all_notes.remove(&(chapter, page));
     }
 
 }
