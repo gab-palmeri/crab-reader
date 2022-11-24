@@ -228,17 +228,24 @@ pub fn get_chapter_text_utf8(path: impl Into<String>, chapter_number: usize) -> 
     else if let Ok(text) = get_chapter_bytes(folder_name, chapter_number, FileExtension::HTML) {
         remove_edited_chapter(path, chapter_number);
         println!("DEBUG: reading from html files");
+        /*
         let text = Cursor::new(text);
         return from_read(text, 100).as_bytes().to_vec();
+        */
+
+        let text = std::str::from_utf8(&text).unwrap();
+        return rhtml2md::parse_html(text).into_bytes();
     }
     // if it fails, read from epub and save html page
     else if let Ok(mut book) = EpubDoc::new(&path) {
         println!("DEBUG: reading from epub file");
         book.set_current_page(chapter_number).unwrap();
         let content = book.get_current().unwrap();
-        let cursor = Cursor::new(content);
-
-        let text = from_read(cursor, 100).as_bytes().to_vec();
+        
+        //let cursor = Cursor::new(content);
+        // new crate to parse html
+        //let text = from_read(cursor, 100).as_bytes().to_vec();
+        let text = rhtml2md::parse_html(std::str::from_utf8(&content).unwrap());
         // save html page
         let page_path: PathBuf = get_saved_books_dir()
         .join(folder_name)
@@ -246,9 +253,14 @@ pub fn get_chapter_text_utf8(path: impl Into<String>, chapter_number: usize) -> 
 
         println!("DEBUG: path to save chapter: {:?}", page_path);
         let mut file = File::create(page_path).unwrap();
+        /*
         file.write_all(&text).unwrap();
 
         return text;
+        */
+
+        file.write_all(text.as_bytes()).unwrap();
+        return text.into_bytes();
     }
 
     [0u8].into()
