@@ -1,6 +1,7 @@
 use crate::{MYENV, utils::{envmanager::FontSize, dir_manager::get_edited_books_dir}};
 
 use super::{saveload::{get_chapter_bytes, FileExtension, remove_edited_chapter}, dir_manager::{get_saved_books_dir, get_saved_covers_dir, get_metadata_path}};
+use druid::image::EncodableLayout;
 use epub::doc::EpubDoc;
 use html2text::from_read;
 use serde_json::json;
@@ -8,7 +9,7 @@ use std::{
     collections::HashMap,
     error,
     fs::{File, OpenOptions},
-    io::{BufReader, Cursor, Write},
+    io::{BufReader, Cursor, Write, Read},
     path::{Path, PathBuf},
     rc::Rc,
     sync::{Arc, Mutex},
@@ -234,7 +235,10 @@ pub fn get_chapter_text_utf8(path: impl Into<String>, chapter_number: usize) -> 
         */
 
         let text = std::str::from_utf8(&text).unwrap();
-        return rhtml2md::parse_html(text).into_bytes();
+        let mut parsed = rhtml2md::parse_html(text);
+
+        let first_back = parsed.find("\n").unwrap_or(0);
+        return parsed[first_back+1..].as_bytes().to_vec();
     }
     // if it fails, read from epub and save html page
     else if let Ok(mut book) = EpubDoc::new(&path) {
@@ -245,7 +249,11 @@ pub fn get_chapter_text_utf8(path: impl Into<String>, chapter_number: usize) -> 
         //let cursor = Cursor::new(content);
         // new crate to parse html
         //let text = from_read(cursor, 100).as_bytes().to_vec();
-        let text = rhtml2md::parse_html(std::str::from_utf8(&content).unwrap());
+        let mut text = rhtml2md::parse_html(std::str::from_utf8(&content).unwrap());
+
+        let first_back = text.find("\n").unwrap_or(0);
+        text = text[first_back+1..].to_string();
+
         // save html page
         let page_path: PathBuf = get_saved_books_dir()
         .join(folder_name)
@@ -259,7 +267,7 @@ pub fn get_chapter_text_utf8(path: impl Into<String>, chapter_number: usize) -> 
         return text;
         */
 
-        file.write_all(text.as_bytes()).unwrap();
+        file.write_all(&content).unwrap();
         return text.into_bytes();
     }
 
