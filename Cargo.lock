@@ -446,7 +446,6 @@ dependencies = [
  "dirs",
  "druid",
  "epub",
- "html2text",
  "leptess",
  "once_cell",
  "pulldown-cmark",
@@ -1169,19 +1168,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "html2text"
-version = "0.4.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "db2a75f4fdb748c0980b4d04f8edafc749bf4b5bfa738bf6c1565c7e6118d6ca"
-dependencies = [
- "html5ever 0.26.0",
- "markup5ever 0.11.0",
- "tendril",
- "unicode-width",
- "xml5ever 0.17.0",
-]
-
-[[package]]
 name = "html5ever"
 version = "0.25.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1189,21 +1175,7 @@ checksum = "e5c13fb08e5d4dfc151ee5e88bae63f7773d61852f3bdc73c9f4b9e1bde03148"
 dependencies = [
  "log",
  "mac",
- "markup5ever 0.10.1",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "html5ever"
-version = "0.26.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bea68cab48b8459f17cf1c944c67ddc572d272d9f2b274140f223ecb1da4a3b7"
-dependencies = [
- "log",
- "mac",
- "markup5ever 0.11.0",
+ "markup5ever",
  "proc-macro2",
  "quote",
  "syn",
@@ -1462,22 +1434,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a24f40fb03852d1cdd84330cddcaf98e9ec08a7b7768e952fad3b4cf048ec8fd"
 dependencies = [
  "log",
- "phf 0.8.0",
- "phf_codegen 0.8.0",
- "string_cache",
- "string_cache_codegen",
- "tendril",
-]
-
-[[package]]
-name = "markup5ever"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a2629bb1404f3d34c2e921f21fd34ba00b206124c81f65c50b43b6aaefeb016"
-dependencies = [
- "log",
- "phf 0.10.1",
- "phf_codegen 0.10.0",
+ "phf",
+ "phf_codegen",
  "string_cache",
  "string_cache_codegen",
  "tendril",
@@ -1489,10 +1447,10 @@ version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f015da43bcd8d4f144559a3423f4591d69b8ce0652c905374da7205df336ae2b"
 dependencies = [
- "html5ever 0.25.2",
- "markup5ever 0.10.1",
+ "html5ever",
+ "markup5ever",
  "tendril",
- "xml5ever 0.16.2",
+ "xml5ever",
 ]
 
 [[package]]
@@ -1719,15 +1677,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "phf"
-version = "0.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fabbf1ead8a5bcbc20f5f8b939ee3f5b0f6f281b6ad3468b84656b658b455259"
-dependencies = [
- "phf_shared 0.10.0",
-]
-
-[[package]]
 name = "phf_codegen"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1735,16 +1684,6 @@ checksum = "cbffee61585b0411840d3ece935cce9cb6321f01c45477d30066498cd5e1a815"
 dependencies = [
  "phf_generator 0.8.0",
  "phf_shared 0.8.0",
-]
-
-[[package]]
-name = "phf_codegen"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4fb1c3a8bc4dd4e5cfce29b44ffc14bedd2ee294559a294e2a4d4c9e9a6a13cd"
-dependencies = [
- "phf_generator 0.10.0",
- "phf_shared 0.10.0",
 ]
 
 [[package]]
@@ -2170,7 +2109,7 @@ version = "0.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "08fd0cff90d1e9d1c103758c4dc9a2cc06476a78d749a977f28a40f37fef06e2"
 dependencies = [
- "html5ever 0.25.2",
+ "html5ever",
  "jni",
  "lazy_static",
  "markup5ever_rcdom",
@@ -3136,19 +3075,8 @@ checksum = "9234163818fd8e2418fcde330655e757900d4236acd8cc70fef345ef91f6d865"
 dependencies = [
  "log",
  "mac",
- "markup5ever 0.10.1",
+ "markup5ever",
  "time 0.1.44",
-]
-
-[[package]]
-name = "xml5ever"
-version = "0.17.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4034e1d05af98b51ad7214527730626f019682d797ba38b51689212118d8e650"
-dependencies = [
- "log",
- "mac",
- "markup5ever 0.11.0",
 ]
 
 [[package]]

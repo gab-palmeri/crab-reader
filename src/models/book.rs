@@ -190,49 +190,6 @@ impl BookReading for Book {
         self.notes.update_current(self.chapter_number, page);
     }
 
-    fn get_chapter_rich_text(&self) -> RichText {
-        let mut book = EpubDoc::new(self.path.as_str()).unwrap();
-        book.set_current_page(self.chapter_number).unwrap();
-        let content = book.get_current_str().unwrap();
-        let vec_tagged = html2text::from_read_rich(content.as_bytes(), 50);
-
-        let mut text = String::new();
-        // first usize is the starting index of the tag
-        // last usize is the ending index of the tag
-        // String is the tag
-        let mut tags = Vec::<(usize, usize, String)>::new();
-        for line in vec_tagged {
-            println!("DEBUG: line: {:?}", line);
-            for item in line.into_tagged_strings() {
-                let starting_index = text.len();
-                if item.s.starts_with("*") & item.s.ends_with("*") {
-                    text.push_str(item.s.replace("*", "").as_str());
-                } else {
-                    text.push_str(item.s.as_str());
-                }
-                let ending_index = text.len() - 1;
-
-                if let Some(tag) = item.tag.get(0) {
-                    let tag = match tag {
-                        html2text::render::text_renderer::RichAnnotation::Default => "default",
-                        //html2text::render::text_renderer::RichAnnotation::Link(link) => "a",
-                        html2text::render::text_renderer::RichAnnotation::Link(_link) => "em",
-                        //html2text::render::text_renderer::RichAnnotation::Image(link) => "img",
-                        html2text::render::text_renderer::RichAnnotation::Emphasis => "em",
-                        html2text::render::text_renderer::RichAnnotation::Strong => "strong",
-                        //html2text::render::text_renderer::RichAnnotation::Strikeout => "strike",
-                        //html2text::render::text_renderer::RichAnnotation::Code => "code",
-                        //html2text::render::text_renderer::RichAnnotation::Preformat(boolean) => "preformat",
-                        _ => "none",
-                    };
-                    tags.push((starting_index, ending_index, tag.to_string()));
-                }
-            }
-            text.push_str("\n");
-        }
-        text_descriptor::get_rich_text(text, tags)
-    }
-
     fn get_page_of_chapter(&self) -> String {
         //possibile entry point
         self.chapter_text_split

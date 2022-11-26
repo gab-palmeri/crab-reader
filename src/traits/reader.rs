@@ -27,9 +27,6 @@ pub trait BookReading {
     /// Example: go back and go forward
     fn set_chapter_current_page_number(&mut self, page: usize);
 
-    /// Method that returns rich text of the current chapter
-    fn get_chapter_rich_text(&self) -> RichText;
-
     /// Method that returns the page as String of the current chapter
     fn get_page_of_chapter(&self) -> String;
 

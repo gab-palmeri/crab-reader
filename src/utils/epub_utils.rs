@@ -1,15 +1,13 @@
 use crate::{MYENV, utils::{envmanager::FontSize, dir_manager::get_edited_books_dir}};
 
 use super::{saveload::{get_chapter_bytes, FileExtension, remove_edited_chapter}, dir_manager::{get_saved_books_dir, get_saved_covers_dir, get_metadata_path}};
-use druid::image::EncodableLayout;
 use epub::doc::EpubDoc;
-use html2text::from_read;
 use serde_json::json;
 use std::{
     collections::HashMap,
     error,
     fs::{File, OpenOptions},
-    io::{BufReader, Cursor, Write, Read},
+    io::{BufReader, Write},
     path::{Path, PathBuf},
     rc::Rc,
     sync::{Arc, Mutex},
